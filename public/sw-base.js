@@ -1,16 +1,29 @@
 
 
-
+// ************************************************** This is how we import stuff into a ServiceWorker **********************************************
 importScripts('workbox-sw.prod.v2.0.0.js');
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
+// **************************************************************************************************************************************************
 
 const workboxSW = new self.WorkboxSW();
 
+// ************** The .router and .strategies are the big things in workbox *************************************************************************
+
+// *******************************************************************************************
+// If the route of http calls made in our application matches the regular expression below then use the staleWhileRevalidate caching strategy
+// which says that get stuff from cache and then regardless of whether it is found there or not, go the Internet and get it from there and update the cache and of course
+// return it 
+// This behind the scenes sets up the FETCH even handler **************************************
+
+
+// The order of the registereroutes are important 
+
+
 workboxSW.router.registerRoute(/.*(?:googleapis|gstatic)\.com.*$/, workboxSW.strategies.staleWhileRevalidate({
-  cacheName: 'google-fonts',
-  cacheExpiration: {
-    maxEntries: 3,
+  cacheName: 'google-fonts',                // Name of the cache to create
+  cacheExpiration: {                        // Customizing the expiration 
+    maxEntries: 3,                          // Will remove the old one to ensure that only 3 are saved in cache
     maxAgeSeconds: 60 * 60 * 24 * 30
   }
 }));
@@ -26,17 +39,17 @@ workboxSW.router.registerRoute(/.*(?:firebasestorage\.googleapis)\.com.*$/, work
 workboxSW.router.registerRoute('https://pwagram-99adf.firebaseio.com/posts.json', function(args) {
   return fetch(args.event.request)
     .then(function (res) {
-      var clonedRes = res.clone();
-      clearAllData('posts')
-        .then(function () {
-          return clonedRes.json();
-        })
-        .then(function (data) {
-          for (var key in data) {
-            writeData('posts', data[key])
-          }
-        });
-      return res;
+            var clonedRes = res.clone();
+            clearAllData('posts')
+              .then(function () {
+                  return clonedRes.json();
+            })
+            .then(function (data) {
+                  for (var key in data) {
+                    writeData('posts', data[key])
+                }
+            });
+          return res;
     });
 });
 
